@@ -1,0 +1,22 @@
+# IDE files
+*.iml
+.gradle
+/local.properties
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Build files
+build/
+captures/
+.cxx/
+
+# Keystores
+*.keystore
+
+# Sensitive info
+google-services.json
+gemini.md
