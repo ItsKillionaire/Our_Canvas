@@ -1,6 +1,8 @@
 
 package com.ourcanvas.ui.viewmodels
 
+import android.util.Log
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ourcanvas.domain.usecase.CreateCouple
@@ -25,10 +27,10 @@ class CoupleViewModel @Inject constructor(
                 createCoupleResult.onSuccess {
                     navigate()
                 }.onFailure {
-                    // Handle createCouple error
+                    Log.e("CoupleViewModel", "Error creating couple: ${it.message}")
                 }
             }.onFailure {
-                // Handle signInAnonymously error
+                Log.e("CoupleViewModel", "Error signing in anonymously (createCouple): ${it.message}")
             }
         }
     }
@@ -41,10 +43,10 @@ class CoupleViewModel @Inject constructor(
                 joinCoupleResult.onSuccess {
                     navigate()
                 }.onFailure {
-                    // Handle joinCouple error
+                    Log.e("CoupleViewModel", "Error joining couple: ${it.message}")
                 }
             }.onFailure {
-                // Handle signInAnonymously error
+                Log.e("CoupleViewModel", "Error signing in anonymously (joinCouple): ${it.message}")
             }
         }
     }
