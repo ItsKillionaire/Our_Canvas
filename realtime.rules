@@ -2,8 +2,8 @@
   "rules": {
     "canvases": {
       "$coupleId": {
-        ".read": "root.child('couples').child($coupleId).child('users').child(auth.uid).exists()",
-        ".write": "root.child('couples').child($coupleId).child('users').child(auth.uid).exists()"
+        ".read": "auth.uid != null",
+        ".write": "auth.uid != null"
       }
     }
   }

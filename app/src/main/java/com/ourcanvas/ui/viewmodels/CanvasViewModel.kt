@@ -2,6 +2,7 @@ package com.ourcanvas.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.ourcanvas.data.model.DrawPath
 import com.ourcanvas.data.model.TextObject
 import com.ourcanvas.data.model.UserProfile
@@ -11,7 +12,6 @@ import com.ourcanvas.domain.usecase.GetPartnerMood
 import com.ourcanvas.domain.usecase.GetTextObjects
 import com.ourcanvas.domain.usecase.GetUserProfile
 import com.ourcanvas.domain.usecase.SendDrawingPath
-import com.ourcanvas.domain.usecase.SignInAnonymously
 import com.ourcanvas.domain.usecase.UpdateUserMood
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CanvasViewModel @Inject constructor(
-    private val signInAnonymously: SignInAnonymously,
+    private val auth: FirebaseAuth,
     private val getUserProfile: GetUserProfile,
     private val getPartnerMood: GetPartnerMood,
     private val getDrawingPaths: GetDrawingPaths,
@@ -36,38 +36,26 @@ class CanvasViewModel @Inject constructor(
     val canvasState: StateFlow<CanvasState> = _canvasState
 
     init {
-        signIn()
-    }
-
-    private fun signIn() {
-        viewModelScope.launch {
-            _canvasState.value = _canvasState.value.copy(isLoading = true)
-            val result = signInAnonymously()
-            result.fold(
-                onSuccess = {
-                    val uid = it
-                    _canvasState.value = _canvasState.value.copy(currentUser = UserProfile(uid = uid))
-                    startObservers(uid)
-                },
-                onFailure = {
-                    _canvasState.value = _canvasState.value.copy(error = it.message, isLoading = false)
-                }
-            )
+        val uid = auth.currentUser?.uid
+        if (uid != null) {
+            startObservers(uid)
+        } else {
+            _canvasState.value = _canvasState.value.copy(error = "User not signed in", isLoading = false)
         }
     }
 
     private fun startObservers(uid: String) {
         viewModelScope.launch {
+            _canvasState.value = _canvasState.value.copy(isLoading = true)
             getUserProfile(uid).catch {
-                _canvasState.value = _canvasState.value.copy(error = it.message)
+                _canvasState.value = _canvasState.value.copy(error = it.message, isLoading = false)
             }.collect {
-                _canvasState.value = _canvasState.value.copy(currentUser = it)
+                _canvasState.value = _canvasState.value.copy(currentUser = it, isLoading = false)
                 if (it.coupleId != null) {
                     observePartnerMood(uid)
                     observeDrawingPaths()
                     observeTextObjects()
                 }
-                _canvasState.value = _canvasState.value.copy(isLoading = false)
             }
         }
     }

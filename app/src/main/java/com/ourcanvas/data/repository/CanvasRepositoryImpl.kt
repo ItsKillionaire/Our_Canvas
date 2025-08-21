@@ -26,12 +26,17 @@ class CanvasRepositoryImpl(
 
     override suspend fun signInAnonymously(): Result<String> {
         return try {
-            val result = auth.signInAnonymously().await()
-            val uid = result.user?.uid
-            if (uid != null) {
-                Result.success(uid)
+            val currentUser = auth.currentUser
+            if (currentUser != null) {
+                Result.success(currentUser.uid)
             } else {
-                Result.failure(Exception("Unknown error occurred during sign-in."))
+                val result = auth.signInAnonymously().await()
+                val uid = result.user?.uid
+                if (uid != null) {
+                    Result.success(uid)
+                } else {
+                    Result.failure(Exception("Unknown error occurred during sign-in."))
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)
