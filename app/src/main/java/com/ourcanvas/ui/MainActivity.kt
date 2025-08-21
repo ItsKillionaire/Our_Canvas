@@ -12,6 +12,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        android.util.Log.d("MainActivity", "onCreate: Activity created")
         setContent {
             OurCanvasTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {

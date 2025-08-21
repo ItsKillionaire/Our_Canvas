@@ -34,11 +34,8 @@ object AppModule {
     fun provideCanvasRepository(
         auth: FirebaseAuth,
         db: FirebaseDatabase,
-        firestore: FirebaseFirestore,
-        @ApplicationContext context: Context
+        firestore: FirebaseFirestore
     ): CanvasRepository {
-        val sharedPreferences = context.getSharedPreferences("our_canvas_prefs", Context.MODE_PRIVATE)
-        val coupleId = sharedPreferences.getString("couple_id", null) ?: "our_shared_canvas_id"
-        return CanvasRepositoryImpl(auth, db, firestore, coupleId)
+        return CanvasRepositoryImpl(auth, db, firestore)
     }
 }

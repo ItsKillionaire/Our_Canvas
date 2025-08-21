@@ -20,9 +20,19 @@ import kotlinx.coroutines.Dispatchers
 class CanvasRepositoryImpl(
     private val auth: FirebaseAuth,
     private val db: FirebaseDatabase,
-    private val firestore: FirebaseFirestore,
-    private val coupleId: String
+    private val firestore: FirebaseFirestore
 ) : CanvasRepository {
+
+    override suspend fun createUserProfile(uid: String): Result<Unit> {
+        return try {
+            withContext(Dispatchers.IO) {
+                firestore.collection("users").document(uid).set(UserProfile(uid = uid)).await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     override suspend fun signInAnonymously(): Result<String> {
         return try {
@@ -102,7 +112,7 @@ class CanvasRepositoryImpl(
         }
     }
 
-    override fun getDrawingPaths(): Flow<DrawPath> = callbackFlow {
+    override fun getDrawingPaths(coupleId: String): Flow<DrawPath> = callbackFlow {
         val pathsRef = db.getReference("canvases/$coupleId/drawing_paths")
 
         val listener = object : ValueEventListener {
@@ -124,7 +134,7 @@ class CanvasRepositoryImpl(
         awaitClose { pathsRef.removeEventListener(listener) }
     }
 
-    override suspend fun sendDrawingPath(path: DrawPath): Result<Unit> {
+    override suspend fun sendDrawingPath(coupleId: String, path: DrawPath): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
                 val pathsRef = db.getReference("canvases/$coupleId/drawing_paths")
@@ -136,11 +146,8 @@ class CanvasRepositoryImpl(
         }
     }
 
-   override fun getPartnerMood(uid: String): Flow<UserProfile> = callbackFlow {
-        val userRef = firestore.collection("users").document(uid)
+   override fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile> = callbackFlow {
         try {
-            val userDoc = userRef.get().await()
-            val coupleId = userDoc.getString("coupleId")
             if (coupleId != null) {
                 val coupleRef = firestore.collection("couples").document(coupleId)
                 val coupleDoc = coupleRef.get().await()
@@ -170,7 +177,7 @@ class CanvasRepositoryImpl(
     }
 
 
-    override fun getTextObjects(): Flow<List<TextObject>> = callbackFlow {
+    override fun getTextObjects(coupleId: String): Flow<List<TextObject>> = callbackFlow {
         val collectionRef = firestore.collection("canvases/$coupleId/texts")
 
         val listener = collectionRef.addSnapshotListener { snapshot, error ->
@@ -188,7 +195,7 @@ class CanvasRepositoryImpl(
         awaitClose { listener.remove() }
     }
 
-    override suspend fun addOrUpdateTextObject(textObject: TextObject): Result<Unit> {
+    override suspend fun addOrUpdateTextObject(coupleId: String, textObject: TextObject): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
                 val docRef = firestore.collection("canvases/$coupleId/texts").document(textObject.id)

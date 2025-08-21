@@ -51,18 +51,19 @@ class CanvasViewModel @Inject constructor(
                 _canvasState.value = _canvasState.value.copy(error = it.message, isLoading = false)
             }.collect {
                 _canvasState.value = _canvasState.value.copy(currentUser = it, isLoading = false)
-                if (it.coupleId != null) {
-                    observePartnerMood(uid)
-                    observeDrawingPaths()
-                    observeTextObjects()
+                val coupleId = it.coupleId
+                if (coupleId != null) {
+                    observePartnerMood(uid, coupleId)
+                    observeDrawingPaths(coupleId)
+                    observeTextObjects(coupleId)
                 }
             }
         }
     }
 
-    private fun observePartnerMood(uid: String) {
+    private fun observePartnerMood(uid: String, coupleId: String) {
         viewModelScope.launch {
-            getPartnerMood(uid).catch {
+            getPartnerMood(uid, coupleId).catch {
                 _canvasState.value = _canvasState.value.copy(error = it.message)
             }.collect {
                 _canvasState.value = _canvasState.value.copy(partnerUser = it)
@@ -70,9 +71,9 @@ class CanvasViewModel @Inject constructor(
         }
     }
 
-    private fun observeDrawingPaths() {
+    private fun observeDrawingPaths(coupleId: String) {
         viewModelScope.launch {
-            getDrawingPaths().catch {
+            getDrawingPaths(coupleId).catch {
                 _canvasState.value = _canvasState.value.copy(error = it.message)
             }.collect {
                 val currentPaths = _canvasState.value.drawingPaths.toMutableList()
@@ -82,9 +83,9 @@ class CanvasViewModel @Inject constructor(
         }
     }
 
-    private fun observeTextObjects() {
+    private fun observeTextObjects(coupleId: String) {
         viewModelScope.launch {
-            getTextObjects().catch {
+            getTextObjects(coupleId).catch {
                 _canvasState.value = _canvasState.value.copy(error = it.message)
             }.collect {
                 _canvasState.value = _canvasState.value.copy(textObjects = it)
@@ -96,7 +97,9 @@ class CanvasViewModel @Inject constructor(
         viewModelScope.launch {
             when (event) {
                 is CanvasEvent.DrawPath -> {
-                    sendDrawingPath(event.path)
+                    _canvasState.value.currentUser?.coupleId?.let {
+                        sendDrawingPath(it, event.path)
+                    }
                 }
                 is CanvasEvent.UpdateMood -> {
                     _canvasState.value.currentUser?.let {
@@ -110,7 +113,9 @@ class CanvasViewModel @Inject constructor(
                     _canvasState.value = _canvasState.value.copy(selectedStrokeWidth = event.width)
                 }
                 is CanvasEvent.AddOrUpdateText -> {
-                    addOrUpdateTextObject(event.text)
+                    _canvasState.value.currentUser?.coupleId?.let {
+                        addOrUpdateTextObject(it, event.text)
+                    }
                 }
                 is CanvasEvent.ToggleTextField -> {
                     _canvasState.value = _canvasState.value.copy(

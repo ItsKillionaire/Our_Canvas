@@ -7,6 +7,6 @@ import javax.inject.Inject
 class AddOrUpdateTextObject @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    suspend operator fun invoke(textObject: TextObject): Result<Unit> =
-        repository.addOrUpdateTextObject(textObject)
+    suspend operator fun invoke(coupleId: String, textObject: TextObject): Result<Unit> =
+        repository.addOrUpdateTextObject(coupleId, textObject)
 }

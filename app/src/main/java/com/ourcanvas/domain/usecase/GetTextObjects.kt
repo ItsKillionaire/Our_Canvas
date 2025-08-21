@@ -8,6 +8,6 @@ import javax.inject.Inject
 class GetTextObjects @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    operator fun invoke(): Flow<List<TextObject>> =
-        repository.getTextObjects()
+    operator fun invoke(coupleId: String): Flow<List<TextObject>> =
+        repository.getTextObjects(coupleId)
 }

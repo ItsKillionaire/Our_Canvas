@@ -7,6 +7,6 @@ import javax.inject.Inject
 class SendDrawingPath @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    suspend operator fun invoke(path: DrawPath): Result<Unit> =
-        repository.sendDrawingPath(path)
+    suspend operator fun invoke(coupleId: String, path: DrawPath): Result<Unit> =
+        repository.sendDrawingPath(coupleId, path)
 }

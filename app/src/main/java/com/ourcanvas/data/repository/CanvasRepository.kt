@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface CanvasRepository {
     // AUTH
+    suspend fun createUserProfile(uid: String): Result<Unit>
     suspend fun signInAnonymously(): Result<String>
 
     // MOOD
@@ -14,13 +15,13 @@ interface CanvasRepository {
     suspend fun joinCouple(uid: String, coupleId: String): Result<Unit>
     fun getUserProfile(uid: String): Flow<UserProfile>
     suspend fun updateUserMood(uid: String, mood: String): Result<Unit>
-    fun getPartnerMood(uid: String): Flow<UserProfile>
+    fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile>
 
     // CANVAS - DRAWING (Realtime Database)
-    fun getDrawingPaths(): Flow<DrawPath>
-    suspend fun sendDrawingPath(path: DrawPath): Result<Unit>
+    fun getDrawingPaths(coupleId: String): Flow<DrawPath>
+    suspend fun sendDrawingPath(coupleId: String, path: DrawPath): Result<Unit>
 
     // CANVAS - TEXT (Firestore)
-    fun getTextObjects(): Flow<List<TextObject>>
-    suspend fun addOrUpdateTextObject(textObject: TextObject): Result<Unit>
+    fun getTextObjects(coupleId: String): Flow<List<TextObject>>
+    suspend fun addOrUpdateTextObject(coupleId: String, textObject: TextObject): Result<Unit>
 }

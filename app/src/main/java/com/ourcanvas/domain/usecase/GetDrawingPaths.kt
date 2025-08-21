@@ -8,6 +8,6 @@ import javax.inject.Inject
 class GetDrawingPaths @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    operator fun invoke(): Flow<DrawPath> =
-        repository.getDrawingPaths()
+    operator fun invoke(coupleId: String): Flow<DrawPath> =
+        repository.getDrawingPaths(coupleId)
 }
