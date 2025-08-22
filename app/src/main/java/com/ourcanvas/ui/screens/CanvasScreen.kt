@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -125,11 +126,8 @@ fun CanvasTopBar(
     TopAppBar(
         title = {
             state.coupleId?.let {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Couple ID: $it", modifier = Modifier.padding(end = 8.dp))
-                    IconButton(onClick = { clipboardManager.setText(AnnotatedString(it)) }) {
-                        Icon(Icons.Filled.ContentCopy, contentDescription = "Copy Couple ID")
-                    }
+                IconButton(onClick = { clipboardManager.setText(AnnotatedString(it)) }) {
+                    Icon(Icons.Default.Badge, contentDescription = "Copy Couple ID")
                 }
             }
         },
