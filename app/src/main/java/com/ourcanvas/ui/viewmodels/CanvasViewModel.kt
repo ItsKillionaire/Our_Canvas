@@ -4,12 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.ourcanvas.data.model.DrawPath
-import com.ourcanvas.data.model.TextObject
 import com.ourcanvas.data.model.UserProfile
-import com.ourcanvas.domain.usecase.AddOrUpdateTextObject
 import com.ourcanvas.domain.usecase.GetDrawingPaths
 import com.ourcanvas.domain.usecase.GetPartnerMood
-import com.ourcanvas.domain.usecase.GetTextObjects
 import com.ourcanvas.domain.usecase.GetUserProfile
 import com.ourcanvas.domain.usecase.LeaveCouple
 import com.ourcanvas.domain.usecase.SendDrawingPath
@@ -27,10 +24,8 @@ class CanvasViewModel @Inject constructor(
     private val getUserProfile: GetUserProfile,
     private val getPartnerMood: GetPartnerMood,
     private val getDrawingPaths: GetDrawingPaths,
-    private val getTextObjects: GetTextObjects,
     private val sendDrawingPath: SendDrawingPath,
     private val updateUserMood: UpdateUserMood,
-    private val addOrUpdateTextObject: AddOrUpdateTextObject,
     private val leaveCouple: LeaveCouple
 ) : ViewModel() {
 
@@ -61,7 +56,6 @@ class CanvasViewModel @Inject constructor(
                     if (coupleId != null) {
                         observePartnerMood(uid, coupleId)
                         observeDrawingPaths(coupleId)
-                        observeTextObjects(coupleId)
                     }
                 } else {
                     _canvasState.value = _canvasState.value.copy(error = "User profile not found", isLoading = false)
@@ -92,15 +86,7 @@ class CanvasViewModel @Inject constructor(
         }
     }
 
-    private fun observeTextObjects(coupleId: String) {
-        viewModelScope.launch {
-            getTextObjects(coupleId).catch {
-                _canvasState.value = _canvasState.value.copy(error = it.message)
-            }.collect {
-                _canvasState.value = _canvasState.value.copy(textObjects = it)
-            }
-        }
-    }
+    
 
     fun onEvent(event: CanvasEvent) {
         viewModelScope.launch {
@@ -116,21 +102,37 @@ class CanvasViewModel @Inject constructor(
                     }
                 }
                 is CanvasEvent.SelectColor -> {
-                    _canvasState.value = _canvasState.value.copy(selectedColor = event.color)
+                    _canvasState.value = _canvasState.value.copy(selectedColor = event.color, isEraserSelected = false)
                 }
                 is CanvasEvent.SelectStrokeWidth -> {
                     _canvasState.value = _canvasState.value.copy(selectedStrokeWidth = event.width)
                 }
-                is CanvasEvent.AddOrUpdateText -> {
-                    _canvasState.value.currentUser?.coupleId?.let {
-                        addOrUpdateTextObject(it, event.text)
+                is CanvasEvent.Undo -> {
+                    val currentUserId = _canvasState.value.currentUser?.uid ?: return@launch
+                    val userPaths = _canvasState.value.drawingPaths.filter { it.userId == currentUserId }
+                    if (userPaths.isNotEmpty()) {
+                        val lastUserPath = userPaths.last()
+                        val currentPaths = _canvasState.value.drawingPaths.toMutableList()
+                        currentPaths.remove(lastUserPath)
+                        val currentUndonePaths = _canvasState.value.undonePaths.toMutableList()
+                        currentUndonePaths.add(lastUserPath)
+                        _canvasState.value = _canvasState.value.copy(drawingPaths = currentPaths, undonePaths = currentUndonePaths)
                     }
                 }
-                is CanvasEvent.ToggleTextField -> {
-                    _canvasState.value = _canvasState.value.copy(
-                        showTextField = event.textObject != null,
-                        currentTextObject = event.textObject
-                    )
+                is CanvasEvent.Redo -> {
+                    val currentUserId = _canvasState.value.currentUser?.uid ?: return@launch
+                    val userUndonePaths = _canvasState.value.undonePaths.filter { it.userId == currentUserId }
+                    if (userUndonePaths.isNotEmpty()) {
+                        val lastUserUndonePath = userUndonePaths.last()
+                        val currentUndonePaths = _canvasState.value.undonePaths.toMutableList()
+                        currentUndonePaths.remove(lastUserUndonePath)
+                        val currentPaths = _canvasState.value.drawingPaths.toMutableList()
+                        currentPaths.add(lastUserUndonePath)
+                        _canvasState.value = _canvasState.value.copy(drawingPaths = currentPaths, undonePaths = currentUndonePaths)
+                    }
+                }
+                is CanvasEvent.ToggleEraser -> {
+                    _canvasState.value = _canvasState.value.copy(isEraserSelected = !_canvasState.value.isEraserSelected)
                 }
                 is CanvasEvent.LeaveCouple -> {
                     _canvasState.value.currentUser?.let {
@@ -148,12 +150,12 @@ class CanvasViewModel @Inject constructor(
         val currentUser: UserProfile? = null,
         val partnerUser: UserProfile? = null,
         val drawingPaths: List<DrawPath> = emptyList(),
-        val textObjects: List<TextObject> = emptyList(),
+        val undonePaths: List<DrawPath> = emptyList(),
+        val redonePaths: List<DrawPath> = emptyList(),
         val error: String? = null,
         val selectedColor: Long = 0xFF000000,
         val selectedStrokeWidth: Float = 8f,
-        val showTextField: Boolean = false,
-        val currentTextObject: TextObject? = null,
+        val isEraserSelected: Boolean = false,
         val coupleId: String? = null
     )
 
@@ -162,8 +164,9 @@ class CanvasViewModel @Inject constructor(
         data class UpdateMood(val mood: String) : CanvasEvent()
         data class SelectColor(val color: Long) : CanvasEvent()
         data class SelectStrokeWidth(val width: Float) : CanvasEvent()
-        data class AddOrUpdateText(val text: TextObject) : CanvasEvent()
-        data class ToggleTextField(val textObject: TextObject? = null) : CanvasEvent()
+        object Undo : CanvasEvent()
+        object Redo : CanvasEvent()
+        object ToggleEraser : CanvasEvent()
         object LeaveCouple : CanvasEvent()
     }
 

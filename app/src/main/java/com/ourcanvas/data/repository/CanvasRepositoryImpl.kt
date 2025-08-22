@@ -9,7 +9,6 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ourcanvas.data.model.DrawPath
-import com.ourcanvas.data.model.TextObject
 import com.ourcanvas.data.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose
@@ -166,10 +165,10 @@ class CanvasRepositoryImpl(
         val coupleRef = firestore.collection("couples").document(coupleId)
         var partnerListener: com.google.firebase.firestore.ListenerRegistration? = null
 
-        val coupleListener = coupleRef.addSnapshotListener { coupleSnapshot, coupleError ->
+        val coupleListener = coupleRef.addSnapshotListener coupleListener@{ coupleSnapshot, coupleError ->
             if (coupleError != null) {
                 close(coupleError)
-                return@addSnapshotListener
+                return@coupleListener
             }
 
             partnerListener?.remove() // remove previous listener
@@ -180,10 +179,10 @@ class CanvasRepositoryImpl(
 
                 if (partnerId != null) {
                     val partnerRef = firestore.collection("users").document(partnerId)
-                    partnerListener = partnerRef.addSnapshotListener { partnerSnapshot, partnerError ->
+                    partnerListener = partnerRef.addSnapshotListener partnerListener@{ partnerSnapshot, partnerError ->
                         if (partnerError != null) {
                             close(partnerError)
-                            return@addSnapshotListener
+                            return@partnerListener
                         }
 
                         if (partnerSnapshot != null && partnerSnapshot.exists()) {
@@ -208,35 +207,7 @@ class CanvasRepositoryImpl(
     }
 
 
-    override fun getTextObjects(coupleId: String): Flow<List<TextObject>> = callbackFlow {
-        val collectionRef = firestore.collection("canvases/$coupleId/texts")
-
-        val listener = collectionRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null) {
-                val textObjects = snapshot.toObjects(TextObject::class.java)
-                trySend(textObjects).isSuccess
-            }
-        }
-
-        awaitClose { listener.remove() }
-    }
-
-    override suspend fun addOrUpdateTextObject(coupleId: String, textObject: TextObject): Result<Unit> {
-        return try {
-            withContext(Dispatchers.IO) {
-                val docRef = firestore.collection("canvases/$coupleId/texts").document(textObject.id)
-                docRef.set(textObject).await()
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    
 
     override suspend fun leaveCouple(uid: String): Result<Unit> {
         return try {

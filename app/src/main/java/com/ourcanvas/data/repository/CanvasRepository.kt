@@ -1,7 +1,6 @@
 package com.ourcanvas.data.repository
 
 import com.ourcanvas.data.model.DrawPath
-import com.ourcanvas.data.model.TextObject
 import com.ourcanvas.data.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 
@@ -24,7 +23,5 @@ interface CanvasRepository {
     fun getDrawingPaths(coupleId: String): Flow<DrawPath>
     suspend fun sendDrawingPath(coupleId: String, path: DrawPath): Result<Unit>
 
-    // CANVAS - TEXT (Firestore)
-    fun getTextObjects(coupleId: String): Flow<List<TextObject>>
-    suspend fun addOrUpdateTextObject(coupleId: String, textObject: TextObject): Result<Unit>
+    
 }

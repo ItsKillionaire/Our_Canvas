@@ -8,7 +8,8 @@ data class DrawPath(
     val points: List<PointF> = emptyList(), // List of x,y coordinates
     val color: Long = Color.Black.value.toLong(), // Color packed into a Long
     val strokeWidth: Float = 8f,
-    val id: String = "" // Unique ID for the path
+    val id: String = "", // Unique ID for the path
+    val userId: String = "" // ID of the user who drew the path
 )
 
 // Represents a single point in a path.
