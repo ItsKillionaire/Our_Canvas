@@ -27,6 +27,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.TextField
 import com.ourcanvas.ui.viewmodels.CanvasViewModel
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
 
 // ... existing code ...
 
@@ -85,9 +86,17 @@ fun SharedCanvasPreview() {
 
 @Composable
 fun CanvasScreen(
+    navController: NavController,
     viewModel: CanvasViewModel = hiltViewModel()
 ) {
     val state by viewModel.canvasState.collectAsState()
+    val navigateToCoupleScreen by viewModel.navigateToCoupleScreen.collectAsState()
+
+    if (navigateToCoupleScreen) {
+        navController.navigate("couple") {
+            popUpTo("canvas") { inclusive = true }
+        }
+    }
 
     if (state.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -106,6 +115,12 @@ fun CanvasScreen(
                 modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
                 onMoodSelected = { viewModel.onEvent(CanvasEvent.UpdateMood(it)) }
             )
+            Button(
+                onClick = { viewModel.onEvent(CanvasEvent.LeaveCouple) },
+                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+            ) {
+                Text("Leave Couple")
+            }
             DrawingControls(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 state = state,

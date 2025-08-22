@@ -221,4 +221,15 @@ class CanvasRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun leaveCouple(uid: String): Result<Unit> {
+        return try {
+            withContext(Dispatchers.IO) {
+                firestore.collection("users").document(uid).update("coupleId", null).await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -11,6 +11,7 @@ import com.ourcanvas.domain.usecase.GetDrawingPaths
 import com.ourcanvas.domain.usecase.GetPartnerMood
 import com.ourcanvas.domain.usecase.GetTextObjects
 import com.ourcanvas.domain.usecase.GetUserProfile
+import com.ourcanvas.domain.usecase.LeaveCouple
 import com.ourcanvas.domain.usecase.SendDrawingPath
 import com.ourcanvas.domain.usecase.UpdateUserMood
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,11 +30,15 @@ class CanvasViewModel @Inject constructor(
     private val getTextObjects: GetTextObjects,
     private val sendDrawingPath: SendDrawingPath,
     private val updateUserMood: UpdateUserMood,
-    private val addOrUpdateTextObject: AddOrUpdateTextObject
+    private val addOrUpdateTextObject: AddOrUpdateTextObject,
+    private val leaveCouple: LeaveCouple
 ) : ViewModel() {
 
     private val _canvasState = MutableStateFlow(CanvasState())
     val canvasState: StateFlow<CanvasState> = _canvasState
+
+    private val _navigateToCoupleScreen = MutableStateFlow(false)
+    val navigateToCoupleScreen: StateFlow<Boolean> = _navigateToCoupleScreen
 
     init {
         val uid = auth.currentUser?.uid
@@ -127,6 +132,13 @@ class CanvasViewModel @Inject constructor(
                         currentTextObject = event.textObject
                     )
                 }
+                is CanvasEvent.LeaveCouple -> {
+                    _canvasState.value.currentUser?.let {
+                        leaveCouple(it.uid).onSuccess {
+                            _navigateToCoupleScreen.value = true
+                        }
+                    }
+                }
             }
         }
     }
@@ -151,5 +163,6 @@ class CanvasViewModel @Inject constructor(
         data class SelectStrokeWidth(val width: Float) : CanvasEvent()
         data class AddOrUpdateText(val text: TextObject) : CanvasEvent()
         data class ToggleTextField(val textObject: TextObject? = null) : CanvasEvent()
+        object LeaveCouple : CanvasEvent()
     }
 }

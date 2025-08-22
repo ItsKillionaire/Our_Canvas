@@ -17,6 +17,8 @@ interface CanvasRepository {
     suspend fun updateUserMood(uid: String, mood: String): Result<Unit>
     fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile>
 
+    suspend fun leaveCouple(uid: String): Result<Unit>
+
     // CANVAS - DRAWING (Realtime Database)
     fun getDrawingPaths(coupleId: String): Flow<DrawPath>
     suspend fun sendDrawingPath(coupleId: String, path: DrawPath): Result<Unit>

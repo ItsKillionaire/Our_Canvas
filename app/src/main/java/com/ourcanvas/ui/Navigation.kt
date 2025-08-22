@@ -20,7 +20,7 @@ fun Navigation() {
             CoupleScreen(navController = navController)
         }
         composable("canvas") {
-            CanvasScreen()
+            CanvasScreen(navController = navController)
         }
     }
 }
