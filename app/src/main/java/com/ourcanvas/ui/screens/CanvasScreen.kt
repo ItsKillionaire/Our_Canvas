@@ -10,7 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -171,7 +173,7 @@ fun SharedCanvas(
                         onDrawPath(
                             com.ourcanvas.data.model.DrawPath(
                                 points = currentPath.toList(),
-                                color = if (state.isEraserSelected) Color.White.value.toLong() else state.selectedColor,
+                                color = if (state.isEraserSelected) Color.LightGray.value.toLong() else state.selectedColor,
                                 strokeWidth = state.selectedStrokeWidth,
                                 userId = userId
                             )
@@ -192,7 +194,11 @@ fun SharedCanvas(
             drawPath(
                 path = composePath,
                 color = Color(path.color),
-                style = Stroke(width = path.strokeWidth)
+                style = Stroke(
+                    width = path.strokeWidth,
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
             )
         }
 
@@ -206,8 +212,12 @@ fun SharedCanvas(
         }
         drawPath(
             path = composePath,
-            color = Color(if (state.isEraserSelected) Color.White.value.toLong() else state.selectedColor),
-            style = Stroke(width = state.selectedStrokeWidth)
+            color = Color(if (state.isEraserSelected) Color.LightGray.value.toLong() else state.selectedColor),
+            style = Stroke(
+                width = state.selectedStrokeWidth,
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round
+            )
         )
     }
 }
@@ -264,7 +274,7 @@ fun DrawingControls(
                     ) {}
                 }
                 IconButton(onClick = onToggleEraser) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Eraser")
+                    Icon(Icons.Filled.Edit, contentDescription = "Eraser")
                 }
                 IconButton(onClick = onUndo) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")

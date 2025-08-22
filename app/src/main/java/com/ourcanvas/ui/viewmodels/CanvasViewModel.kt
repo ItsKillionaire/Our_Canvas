@@ -78,15 +78,22 @@ class CanvasViewModel @Inject constructor(
         viewModelScope.launch {
             getDrawingPaths(coupleId).catch {
                 _canvasState.value = _canvasState.value.copy(error = it.message)
-            }.collect {
+            }.collect { path ->
                 val currentPaths = _canvasState.value.drawingPaths.toMutableList()
-                currentPaths.add(it)
+                val existingPathIndex = currentPaths.indexOfFirst { it.id == path.id }
+                if (existingPathIndex != -1) {
+                    // Do not update if the path is the same as the one in the undonePaths
+                    if (_canvasState.value.undonePaths.any { it.id == path.id }) {
+                        return@collect
+                    }
+                    currentPaths[existingPathIndex] = path
+                } else {
+                    currentPaths.add(path)
+                }
                 _canvasState.value = _canvasState.value.copy(drawingPaths = currentPaths)
             }
         }
     }
-
-    
 
     fun onEvent(event: CanvasEvent) {
         viewModelScope.launch {
@@ -108,26 +115,22 @@ class CanvasViewModel @Inject constructor(
                     _canvasState.value = _canvasState.value.copy(selectedStrokeWidth = event.width)
                 }
                 is CanvasEvent.Undo -> {
-                    val currentUserId = _canvasState.value.currentUser?.uid ?: return@launch
-                    val userPaths = _canvasState.value.drawingPaths.filter { it.userId == currentUserId }
-                    if (userPaths.isNotEmpty()) {
-                        val lastUserPath = userPaths.last()
+                    if (_canvasState.value.drawingPaths.isNotEmpty()) {
+                        val lastPath = _canvasState.value.drawingPaths.last()
                         val currentPaths = _canvasState.value.drawingPaths.toMutableList()
-                        currentPaths.remove(lastUserPath)
+                        currentPaths.remove(lastPath)
                         val currentUndonePaths = _canvasState.value.undonePaths.toMutableList()
-                        currentUndonePaths.add(lastUserPath)
+                        currentUndonePaths.add(lastPath)
                         _canvasState.value = _canvasState.value.copy(drawingPaths = currentPaths, undonePaths = currentUndonePaths)
                     }
                 }
                 is CanvasEvent.Redo -> {
-                    val currentUserId = _canvasState.value.currentUser?.uid ?: return@launch
-                    val userUndonePaths = _canvasState.value.undonePaths.filter { it.userId == currentUserId }
-                    if (userUndonePaths.isNotEmpty()) {
-                        val lastUserUndonePath = userUndonePaths.last()
+                    if (_canvasState.value.undonePaths.isNotEmpty()) {
+                        val lastUndonePath = _canvasState.value.undonePaths.last()
                         val currentUndonePaths = _canvasState.value.undonePaths.toMutableList()
-                        currentUndonePaths.remove(lastUserUndonePath)
+                        currentUndonePaths.remove(lastUndonePath)
                         val currentPaths = _canvasState.value.drawingPaths.toMutableList()
-                        currentPaths.add(lastUserUndonePath)
+                        currentPaths.add(lastUndonePath)
                         _canvasState.value = _canvasState.value.copy(drawingPaths = currentPaths, undonePaths = currentUndonePaths)
                     }
                 }

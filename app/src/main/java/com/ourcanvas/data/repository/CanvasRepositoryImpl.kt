@@ -120,6 +120,12 @@ class CanvasRepositoryImpl(
             withContext(Dispatchers.IO) {
                 val userRef = firestore.collection("users").document(uid)
                 userRef.update("mood", mood).await()
+
+                val userProfile = userRef.get().await().toObject(UserProfile::class.java)
+                userProfile?.coupleId?.let {
+                    val coupleRef = firestore.collection("couples").document(it)
+                    coupleRef.update("moods.$uid", mood).await()
+                }
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -132,10 +138,11 @@ class CanvasRepositoryImpl(
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.children.forEach { 
+                snapshot.children.forEach {
                     val path = it.getValue(DrawPath::class.java)
                     if (path != null) {
-                        trySend(path).isSuccess
+                        val pathWithId = path.copy(id = it.key!!)
+                        trySend(pathWithId).isSuccess
                     }
                 }
             }
@@ -153,7 +160,7 @@ class CanvasRepositoryImpl(
         return try {
             withContext(Dispatchers.IO) {
                 val pathsRef = db.getReference("canvases/$coupleId/drawing_paths")
-                pathsRef.push().setValue(path).await()
+                pathsRef.push().setValue(path.copy(id = "")).await()
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -163,47 +170,24 @@ class CanvasRepositoryImpl(
 
    override fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile> = callbackFlow {
         val coupleRef = firestore.collection("couples").document(coupleId)
-        var partnerListener: com.google.firebase.firestore.ListenerRegistration? = null
 
-        val coupleListener = coupleRef.addSnapshotListener coupleListener@{ coupleSnapshot, coupleError ->
-            if (coupleError != null) {
-                close(coupleError)
-                return@coupleListener
+        val listener = coupleRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
             }
 
-            partnerListener?.remove() // remove previous listener
-
-            if (coupleSnapshot != null && coupleSnapshot.exists()) {
-                val users = (coupleSnapshot.get("users") as? List<*>)?.mapNotNull { it as? String }
-                val partnerId = users?.firstOrNull { it != uid }
-
-                if (partnerId != null) {
-                    val partnerRef = firestore.collection("users").document(partnerId)
-                    partnerListener = partnerRef.addSnapshotListener partnerListener@{ partnerSnapshot, partnerError ->
-                        if (partnerError != null) {
-                            close(partnerError)
-                            return@partnerListener
-                        }
-
-                        if (partnerSnapshot != null && partnerSnapshot.exists()) {
-                            val userProfile = partnerSnapshot.toObject(UserProfile::class.java)
-                            if (userProfile != null) {
-                                trySend(userProfile)
-                            }
-                        }
-                    }
-                } else {
-                    trySend(UserProfile(mood = "…")).isSuccess
-                }
+            if (snapshot != null && snapshot.exists()) {
+                val moods = snapshot.get("moods") as? Map<String, String>
+                val partnerId = (snapshot.get("users") as? List<*>)?.mapNotNull { it as? String }?.firstOrNull { it != uid }
+                val partnerMood = moods?.get(partnerId) ?: "…"
+                trySend(UserProfile(mood = partnerMood))
             } else {
                 trySend(UserProfile(mood = "…")).isSuccess
             }
         }
 
-        awaitClose {
-            coupleListener.remove()
-            partnerListener?.remove()
-        }
+        awaitClose { listener.remove() }
     }
 
 
