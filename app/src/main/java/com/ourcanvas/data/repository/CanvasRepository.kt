@@ -9,6 +9,7 @@ interface CanvasRepository {
     // AUTH
     suspend fun createUserProfile(uid: String): Result<Unit>
     suspend fun signInAnonymously(): Result<String>
+    suspend fun signInWithGoogle(idToken: String): Result<String>
 
     // MOOD
     suspend fun createCouple(uid: String): Result<String>

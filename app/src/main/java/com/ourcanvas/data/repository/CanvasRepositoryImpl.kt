@@ -1,6 +1,7 @@
 package com.ourcanvas.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -47,6 +48,21 @@ class CanvasRepositoryImpl(
                 } else {
                     Result.failure(Exception("Unknown error occurred during sign-in."))
                 }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun signInWithGoogle(idToken: String): Result<String> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            val uid = result.user?.uid
+            if (uid != null) {
+                Result.success(uid)
+            } else {
+                Result.failure(Exception("Unknown error occurred during Google sign-in."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -173,7 +189,7 @@ class CanvasRepositoryImpl(
                         if (partnerSnapshot != null && partnerSnapshot.exists()) {
                             val userProfile = partnerSnapshot.toObject(UserProfile::class.java)
                             if (userProfile != null) {
-                                trySend(userProfile).isSuccess
+                                trySend(userProfile)
                             }
                         }
                     }
