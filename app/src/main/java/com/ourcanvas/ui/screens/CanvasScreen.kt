@@ -9,9 +9,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -127,7 +131,7 @@ fun CanvasTopBar(
         title = {
             state.coupleId?.let {
                 IconButton(onClick = { clipboardManager.setText(AnnotatedString(it)) }) {
-                    Icon(Icons.Default.Badge, contentDescription = "Copy Couple ID")
+                    Icon(Icons.Filled.Badge, contentDescription = "Copy Couple ID")
                 }
             }
         },
@@ -235,41 +239,47 @@ fun DrawingControls(
 ) {
     val colors = listOf(0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFFFF00)
 
-    Column(modifier = modifier.padding(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            colors.forEach { color ->
-                Button(
-                    onClick = { onColorSelected(color) },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(2.dp)
-                ) {
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(color)))
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                colors.forEach { color ->
+                    Surface(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable { onColorSelected(color) },
+                        shape = CircleShape,
+                        color = Color(color),
+                        border = if (state.selectedColor == color && !state.isEraserSelected) {
+                            BorderStroke(2.dp, Color.White)
+                        } else {
+                            null
+                        }
+                    ) {}
+                }
+                IconButton(onClick = onToggleEraser) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Eraser")
+                }
+                IconButton(onClick = onUndo) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
+                }
+                IconButton(onClick = onRedo) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Redo")
                 }
             }
-            IconButton(onClick = onToggleEraser) {
-                Icon(Icons.Filled.Delete, contentDescription = "Eraser")
-            }
-            IconButton(onClick = onUndo) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
-            }
-            IconButton(onClick = onRedo) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Redo")
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Slider(
+                value = state.selectedStrokeWidth,
+                onValueChange = { onStrokeWidthChanged(it) },
+                valueRange = 1f..50f,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-        Slider(
-            value = state.selectedStrokeWidth,
-            onValueChange = { onStrokeWidthChanged(it) },
-            valueRange = 1f..50f,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
-
-
