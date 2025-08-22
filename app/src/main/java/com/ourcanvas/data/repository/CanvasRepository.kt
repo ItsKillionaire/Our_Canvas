@@ -13,7 +13,7 @@ interface CanvasRepository {
     // MOOD
     suspend fun createCouple(uid: String): Result<String>
     suspend fun joinCouple(uid: String, coupleId: String): Result<Unit>
-    fun getUserProfile(uid: String): Flow<UserProfile>
+    fun getUserProfile(uid: String): Flow<UserProfile?>
     suspend fun updateUserMood(uid: String, mood: String): Result<Unit>
     fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile>
 

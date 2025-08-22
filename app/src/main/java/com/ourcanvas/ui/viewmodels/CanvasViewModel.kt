@@ -49,13 +49,17 @@ class CanvasViewModel @Inject constructor(
             _canvasState.value = _canvasState.value.copy(isLoading = true)
             getUserProfile(uid).catch {
                 _canvasState.value = _canvasState.value.copy(error = it.message, isLoading = false)
-            }.collect {
-                _canvasState.value = _canvasState.value.copy(currentUser = it, isLoading = false)
-                val coupleId = it.coupleId
-                if (coupleId != null) {
-                    observePartnerMood(uid, coupleId)
-                    observeDrawingPaths(coupleId)
-                    observeTextObjects(coupleId)
+            }.collect { userProfile ->
+                if (userProfile != null) {
+                    _canvasState.value = _canvasState.value.copy(currentUser = userProfile, isLoading = false)
+                    val coupleId = userProfile.coupleId
+                    if (coupleId != null) {
+                        observePartnerMood(uid, coupleId)
+                        observeDrawingPaths(coupleId)
+                        observeTextObjects(coupleId)
+                    }
+                } else {
+                    _canvasState.value = _canvasState.value.copy(error = "User profile not found", isLoading = false)
                 }
             }
         }

@@ -25,6 +25,7 @@ class SplashViewModel @Inject constructor(
     val destination: StateFlow<String?> = _destination
 
     init {
+        android.util.Log.d("SplashViewModel", "init: ViewModel created")
         checkUserState()
     }
 
@@ -32,6 +33,7 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             android.util.Log.d("SplashViewModel", "checkUserState: Starting anonymous sign-in")
             val result = withTimeoutOrNull(10000) { signInAnonymously() }
+            android.util.Log.d("SplashViewModel", "checkUserState: Sign-in result: $result")
             if (result == null) {
                 android.util.Log.d("SplashViewModel", "checkUserState: Sign-in timed out")
                 _destination.value = "couple"
@@ -39,11 +41,13 @@ class SplashViewModel @Inject constructor(
             }
             result.onSuccess { uid ->
                 android.util.Log.d("SplashViewModel", "checkUserState: Sign-in successful, UID: $uid")
+                android.util.Log.d("SplashViewModel", "checkUserState: Getting user profile...")
                 val userProfile = getUserProfile(uid).firstOrNull()
                 android.util.Log.d("SplashViewModel", "checkUserState: User profile: $userProfile")
                 if (userProfile == null) {
                     android.util.Log.d("SplashViewModel", "checkUserState: User profile is null, creating new profile")
                     val createProfileResult = createUserProfile(uid)
+                    android.util.Log.d("SplashViewModel", "checkUserState: Create profile result: $createProfileResult")
                     createProfileResult.onSuccess {
                         android.util.Log.d("SplashViewModel", "checkUserState: Profile creation successful, navigating to couple screen")
                         _destination.value = "couple"

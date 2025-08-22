@@ -8,6 +8,6 @@ import javax.inject.Inject
 class GetUserProfile @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    operator fun invoke(uid: String): Flow<UserProfile> =
+    operator fun invoke(uid: String): Flow<UserProfile?> =
         repository.getUserProfile(uid)
 }

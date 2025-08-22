@@ -80,7 +80,7 @@ class CanvasRepositoryImpl(
         }
     }
 
-    override fun getUserProfile(uid: String): Flow<UserProfile> = callbackFlow {
+    override fun getUserProfile(uid: String): Flow<UserProfile?> = callbackFlow {
         val docRef = firestore.collection("users").document(uid)
 
         val listener = docRef.addSnapshotListener { snapshot, error ->
@@ -91,9 +91,9 @@ class CanvasRepositoryImpl(
 
             if (snapshot != null && snapshot.exists()) {
                 val userProfile = snapshot.toObject(UserProfile::class.java)
-                if (userProfile != null) {
-                    trySend(userProfile).isSuccess
-                }
+                trySend(userProfile).isSuccess
+            } else {
+                trySend(null).isSuccess
             }
         }
 
@@ -104,7 +104,7 @@ class CanvasRepositoryImpl(
         return try {
             withContext(Dispatchers.IO) {
                 val userRef = firestore.collection("users").document(uid)
-                userRef.set(UserProfile(uid, mood)).await()
+                userRef.update("mood", mood).await()
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -147,33 +147,48 @@ class CanvasRepositoryImpl(
     }
 
    override fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile> = callbackFlow {
-        try {
-            if (coupleId != null) {
-                val coupleRef = firestore.collection("couples").document(coupleId)
-                val coupleDoc = coupleRef.get().await()
-                val users = (coupleDoc.get("users") as? List<*>)?.mapNotNull { it as? String }
+        val coupleRef = firestore.collection("couples").document(coupleId)
+        var partnerListener: com.google.firebase.firestore.ListenerRegistration? = null
+
+        val coupleListener = coupleRef.addSnapshotListener { coupleSnapshot, coupleError ->
+            if (coupleError != null) {
+                close(coupleError)
+                return@addSnapshotListener
+            }
+
+            partnerListener?.remove() // remove previous listener
+
+            if (coupleSnapshot != null && coupleSnapshot.exists()) {
+                val users = (coupleSnapshot.get("users") as? List<*>)?.mapNotNull { it as? String }
                 val partnerId = users?.firstOrNull { it != uid }
+
                 if (partnerId != null) {
                     val partnerRef = firestore.collection("users").document(partnerId)
-                    val listener = partnerRef.addSnapshotListener { snapshot, error ->
-                        if (error != null) {
-                            close(error)
+                    partnerListener = partnerRef.addSnapshotListener { partnerSnapshot, partnerError ->
+                        if (partnerError != null) {
+                            close(partnerError)
                             return@addSnapshotListener
                         }
-                        if (snapshot != null && snapshot.exists()) {
-                            val userProfile = snapshot.toObject(UserProfile::class.java)
+
+                        if (partnerSnapshot != null && partnerSnapshot.exists()) {
+                            val userProfile = partnerSnapshot.toObject(UserProfile::class.java)
                             if (userProfile != null) {
                                 trySend(userProfile).isSuccess
                             }
                         }
                     }
-                    awaitClose { listener.remove() }
+                } else {
+                    trySend(UserProfile(mood = "…")).isSuccess
                 }
+            } else {
+                trySend(UserProfile(mood = "…")).isSuccess
             }
-        } catch (e: Exception) {
-            close(e)
         }
-        awaitClose { }
+
+        awaitClose {
+            coupleListener.remove()
+            partnerListener?.remove()
+        }
     }
 
 
