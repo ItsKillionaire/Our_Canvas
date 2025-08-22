@@ -165,4 +165,8 @@ class CanvasViewModel @Inject constructor(
         data class ToggleTextField(val textObject: TextObject? = null) : CanvasEvent()
         object LeaveCouple : CanvasEvent()
     }
+
+    fun onNavigationDone() {
+        _navigateToCoupleScreen.value = false
+    }
 }

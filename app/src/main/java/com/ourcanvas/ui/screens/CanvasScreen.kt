@@ -96,6 +96,7 @@ fun CanvasScreen(
         navController.navigate("couple") {
             popUpTo("canvas") { inclusive = true }
         }
+        viewModel.onNavigationDone()
     }
 
     if (state.isLoading) {
