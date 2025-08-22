@@ -28,6 +28,8 @@ import androidx.compose.material3.TextField
 import com.ourcanvas.ui.viewmodels.CanvasViewModel
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 
 // ... existing code ...
 
@@ -104,6 +106,8 @@ fun CanvasScreen(
             CircularProgressIndicator()
         }
     } else {
+        val clipboardManager = LocalClipboardManager.current
+
         Box(modifier = Modifier.fillMaxSize()) {
             SharedCanvas(
                 modifier = Modifier.fillMaxSize(),
@@ -116,11 +120,22 @@ fun CanvasScreen(
                 modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
                 onMoodSelected = { viewModel.onEvent(CanvasEvent.UpdateMood(it)) }
             )
-            Button(
-                onClick = { viewModel.onEvent(CanvasEvent.LeaveCouple) },
-                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Leave Couple")
+                state.coupleId?.let {
+                    Text("Couple ID: $it", modifier = Modifier.padding(end = 8.dp))
+                    Button(onClick = { clipboardManager.setText(AnnotatedString(it)) }) {
+                        Text("Copy")
+                    }
+                }
+                Button(
+                    onClick = { viewModel.onEvent(CanvasEvent.LeaveCouple) },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("Leave Couple")
+                }
             }
             DrawingControls(
                 modifier = Modifier.align(Alignment.BottomCenter),

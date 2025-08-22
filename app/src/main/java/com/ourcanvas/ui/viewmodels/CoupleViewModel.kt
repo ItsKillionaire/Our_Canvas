@@ -5,10 +5,15 @@ import android.util.Log
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.ourcanvas.domain.usecase.CreateCouple
+import com.ourcanvas.domain.usecase.GetUserProfile
 import com.ourcanvas.domain.usecase.JoinCouple
+import com.ourcanvas.domain.usecase.LeaveCouple
 import com.ourcanvas.domain.usecase.SignInAnonymously
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,37 +21,34 @@ import javax.inject.Inject
 class CoupleViewModel @Inject constructor(
     private val createCouple: CreateCouple,
     private val joinCouple: JoinCouple,
-    private val signInAnonymously: SignInAnonymously
+    private val getUserProfile: GetUserProfile,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
 
-    fun createCouple(navigate: () -> Unit) {
+    val userProfile = getUserProfile(auth.currentUser?.uid ?: "").stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
+    fun createCouple() {
         viewModelScope.launch {
-            val result = signInAnonymously()
-            result.onSuccess { uid ->
-                val createCoupleResult = createCouple(uid)
-                createCoupleResult.onSuccess {
-                    navigate()
-                }.onFailure {
-                    Log.e("CoupleViewModel", "Error creating couple: ${it.message}")
+            auth.currentUser?.uid?.let {
+                val result = createCouple(it)
+                if (result.isFailure) {
+                    Log.e("CoupleViewModel", "Error creating couple: ${result.exceptionOrNull()?.message}")
                 }
-            }.onFailure {
-                Log.e("CoupleViewModel", "Error signing in anonymously (createCouple): ${it.message}")
             }
         }
     }
 
-    fun joinCouple(coupleId: String, navigate: () -> Unit) {
+    fun joinCouple(coupleId: String) {
         viewModelScope.launch {
-            val result = signInAnonymously()
-            result.onSuccess { uid ->
-                val joinCoupleResult = joinCouple(uid, coupleId)
-                joinCoupleResult.onSuccess {
-                    navigate()
-                }.onFailure {
-                    Log.e("CoupleViewModel", "Error joining couple: ${it.message}")
+            auth.currentUser?.uid?.let {
+                val result = joinCouple(it, coupleId)
+                if (result.isFailure) {
+                    Log.e("CoupleViewModel", "Error joining couple: ${result.exceptionOrNull()?.message}")
                 }
-            }.onFailure {
-                Log.e("CoupleViewModel", "Error signing in anonymously (joinCouple): ${it.message}")
             }
         }
     }

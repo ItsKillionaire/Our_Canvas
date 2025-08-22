@@ -56,7 +56,7 @@ class CanvasViewModel @Inject constructor(
                 _canvasState.value = _canvasState.value.copy(error = it.message, isLoading = false)
             }.collect { userProfile ->
                 if (userProfile != null) {
-                    _canvasState.value = _canvasState.value.copy(currentUser = userProfile, isLoading = false)
+                    _canvasState.value = _canvasState.value.copy(currentUser = userProfile, coupleId = userProfile.coupleId, isLoading = false)
                     val coupleId = userProfile.coupleId
                     if (coupleId != null) {
                         observePartnerMood(uid, coupleId)
@@ -153,7 +153,8 @@ class CanvasViewModel @Inject constructor(
         val selectedColor: Long = 0xFF000000,
         val selectedStrokeWidth: Float = 8f,
         val showTextField: Boolean = false,
-        val currentTextObject: TextObject? = null
+        val currentTextObject: TextObject? = null,
+        val coupleId: String? = null
     )
 
     sealed class CanvasEvent {
