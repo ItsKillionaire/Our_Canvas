@@ -226,7 +226,6 @@ fun SharedCanvas(
 @Composable
 fun MoodIndicator(
     mood: String,
-    modifier: Modifier = Modifier,
     onMoodSelected: ((String) -> Unit)? = null
 ) {
     IconButton(onClick = { onMoodSelected?.invoke(if (mood == "😊") "😢" else "😊") }) {
@@ -260,28 +259,30 @@ fun DrawingControls(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    ColorPalette(
-                        colors = colors,
-                        selectedColor = state.selectedColor,
-                        onColorSelected = onColorSelected
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = onToggleEraser) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Eraser")
-                        }
-                        IconButton(onClick = onUndo) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
-                        }
-                        IconButton(onClick = onRedo) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Redo")
+                        ColorPalette(
+                            colors = colors,
+                            selectedColor = state.selectedColor,
+                            onColorSelected = onColorSelected
+                        )
+                        Row {
+                            IconButton(onClick = onToggleEraser) {
+                                Icon(Icons.Filled.Edit, contentDescription = "Eraser")
+                            }
+                            IconButton(onClick = onUndo) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
+                            }
+                            IconButton(onClick = onRedo) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Redo")
+                            }
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text("Stroke Width", style = MaterialTheme.typography.bodyMedium)
                     Slider(
                         value = state.selectedStrokeWidth,
                         onValueChange = { onStrokeWidthChanged(it) },
