@@ -1,21 +1,32 @@
 package com.ourcanvas.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -228,13 +239,19 @@ fun MoodIndicator(
     modifier: Modifier = Modifier,
     onMoodSelected: ((String) -> Unit)? = null
 ) {
-    Text(
-        text = mood,
-        fontSize = 48.sp,
+    Card(
         modifier = modifier.clickable {
             onMoodSelected?.invoke(if (mood == "😊") "😢" else "😊")
-        }
-    )
+        },
+        shape = CircleShape,
+        border = BorderStroke(2.dp, Color.White)
+    ) {
+        Text(
+            text = mood,
+            fontSize = 48.sp,
+            modifier = Modifier.padding(8.dp)
+        )
+    }
 }
 
 @Composable
@@ -247,6 +264,7 @@ fun DrawingControls(
     onRedo: () -> Unit,
     onToggleEraser: () -> Unit
 ) {
+    var controlsVisible by remember { mutableStateOf(true) }
     val colors = listOf(0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFFFF00)
 
     Card(
@@ -254,42 +272,72 @@ fun DrawingControls(
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                colors.forEach { color ->
-                    Surface(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clickable { onColorSelected(color) },
-                        shape = CircleShape,
-                        color = Color(color),
-                        border = if (state.selectedColor == color && !state.isEraserSelected) {
-                            BorderStroke(2.dp, Color.White)
-                        } else {
-                            null
+            IconButton(onClick = { controlsVisible = !controlsVisible }) {
+                Icon(
+                    if (controlsVisible) Icons.Default.Close else Icons.Default.Edit,
+                    contentDescription = "Toggle Controls"
+                )
+            }
+            AnimatedVisibility(visible = controlsVisible) {
+                Column {
+                    ColorPalette(
+                        colors = colors,
+                        selectedColor = state.selectedColor,
+                        onColorSelected = onColorSelected
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        IconButton(onClick = onToggleEraser) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Eraser")
                         }
-                    ) {}
-                }
-                IconButton(onClick = onToggleEraser) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Eraser")
-                }
-                IconButton(onClick = onUndo) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
-                }
-                IconButton(onClick = onRedo) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Redo")
+                        IconButton(onClick = onUndo) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
+                        }
+                        IconButton(onClick = onRedo) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Redo")
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Slider(
+                        value = state.selectedStrokeWidth,
+                        onValueChange = { onStrokeWidthChanged(it) },
+                        valueRange = 1f..50f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Slider(
-                value = state.selectedStrokeWidth,
-                onValueChange = { onStrokeWidthChanged(it) },
-                valueRange = 1f..50f,
-                modifier = Modifier.fillMaxWidth()
-            )
+        }
+    }
+}
+
+@Composable
+fun ColorPalette(
+    colors: List<Long>,
+    selectedColor: Long,
+    onColorSelected: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(colors) { color ->
+            Surface(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable { onColorSelected(color) },
+                shape = CircleShape,
+                color = Color(color),
+                border = if (selectedColor == color) {
+                    BorderStroke(2.dp, Color.White)
+                } else {
+                    null
+                }
+            ) {}
         }
     }
 }

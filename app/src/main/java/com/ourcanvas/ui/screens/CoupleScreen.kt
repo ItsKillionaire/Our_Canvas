@@ -1,5 +1,6 @@
 package com.ourcanvas.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,62 +42,77 @@ fun CoupleScreen(
             }
         }
     }
-    var showJoinDialog by remember { mutableStateOf(false) }
-    var coupleId by remember { mutableStateOf("") }
-
-    
 
     CoupleScreenContent(
         onCreateCouple = { viewModel.createCouple() },
-        onShowJoinDialog = { showJoinDialog = true }
+        onJoinCouple = { viewModel.joinCouple(it) }
     )
-
-    if (showJoinDialog) {
-        AlertDialog(
-            onDismissRequest = { showJoinDialog = false },
-            title = { Text("Join Couple") },
-            text = {
-                OutlinedTextField(
-                    value = coupleId,
-                    onValueChange = { coupleId = it },
-                    label = { Text("Couple ID") }
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.joinCouple(coupleId)
-                        showJoinDialog = false
-                    }
-                ) {
-                    Text("Join")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showJoinDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
 
 @Composable
 fun CoupleScreenContent(
     onCreateCouple: () -> Unit,
-    onShowJoinDialog: () -> Unit
+    onJoinCouple: (String) -> Unit
 ) {
+    var coupleId by remember { mutableStateOf("") }
+    var showJoinForm by remember { mutableStateOf(false) }
+
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onCreateCouple) {
-            Text("Create Couple")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    onClick = onCreateCouple,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Create Couple")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { showJoinForm = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !showJoinForm
+                ) {
+                    Text("Join Couple")
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onShowJoinDialog) {
-            Text("Join Couple")
+
+        AnimatedVisibility(visible = showJoinForm) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    OutlinedTextField(
+                        value = coupleId,
+                        onValueChange = { coupleId = it },
+                        label = { Text("Couple ID") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { onJoinCouple(coupleId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = coupleId.isNotBlank()
+                    ) {
+                        Text("Join")
+                    }
+                }
+            }
         }
     }
 }

@@ -202,10 +202,12 @@ class CanvasRepositoryImpl(
             }
 
             if (snapshot != null && snapshot.exists()) {
-                val moods = snapshot.get("moods") as? Map<String, String>
-                val partnerId = (snapshot.get("users") as? List<*>)?.mapNotNull { it as? String }?.firstOrNull { it != uid }
-                val partnerMood = moods?.get(partnerId) ?: "…"
-                trySend(UserProfile(mood = partnerMood))
+                val moods = snapshot.get("moods") as? Map<*, *>
+                moods?.let { 
+                    val partnerId = (snapshot.get("users") as? List<*>)?.mapNotNull { it as? String }?.firstOrNull { it != uid }
+                    val partnerMood = it[partnerId] as? String ?: "…"
+                    trySend(UserProfile(mood = partnerMood))
+                }
             } else {
                 trySend(UserProfile(mood = "…")).isSuccess
             }
