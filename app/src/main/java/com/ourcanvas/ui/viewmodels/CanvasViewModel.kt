@@ -36,11 +36,14 @@ class CanvasViewModel @Inject constructor(
     val navigateToCoupleScreen: StateFlow<Boolean> = _navigateToCoupleScreen
 
     init {
-        val uid = auth.currentUser?.uid
-        if (uid != null) {
-            startObservers(uid)
-        } else {
-            _canvasState.value = _canvasState.value.copy(error = "User not signed in", isLoading = false)
+        viewModelScope.launch {
+            auth.currentUser?.uid?.let { uid ->
+                getUserProfile(uid).collect { userProfile ->
+                    if (userProfile?.coupleId != null) {
+                        startObservers(uid)
+                    }
+                }
+            }
         }
     }
 

@@ -15,17 +15,36 @@ fun CoupleScreen(
     navController: NavController,
     viewModel: CoupleViewModel = hiltViewModel()
 ) {
-    val userProfile by viewModel.userProfile.collectAsState()
-    var showJoinDialog by remember { mutableStateOf(false) }
-    var coupleId by remember { mutableStateOf("") }
+    val coupleScreenState by viewModel.coupleScreenState.collectAsState()
 
-    LaunchedEffect(userProfile) {
-        if (userProfile?.coupleId != null) {
+    if (coupleScreenState.isLoading) {
+        CircularProgressIndicator()
+    }
+
+    coupleScreenState.error?.let {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Error") },
+            text = { Text(it) },
+            confirmButton = {
+                Button(onClick = { viewModel.clearError() }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    LaunchedEffect(coupleScreenState.coupleId) {
+        if (coupleScreenState.coupleId != null) {
             navController.navigate("canvas") {
                 popUpTo("couple") { inclusive = true }
             }
         }
     }
+    var showJoinDialog by remember { mutableStateOf(false) }
+    var coupleId by remember { mutableStateOf("") }
+
+    
 
     CoupleScreenContent(
         onCreateCouple = { viewModel.createCouple() },

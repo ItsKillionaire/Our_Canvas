@@ -1,5 +1,6 @@
 package com.ourcanvas.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
@@ -70,27 +71,50 @@ class CanvasRepositoryImpl(
 
     override suspend fun createCouple(uid: String): Result<String> {
         return try {
+            Log.d("CanvasRepositoryImpl", "Creating couple for user: $uid")
             val coupleRef = firestore.collection("couples").document()
             val coupleId = coupleRef.id
+            Log.d("CanvasRepositoryImpl", "Couple ID: $coupleId")
             withContext(Dispatchers.IO) {
                 coupleRef.set(mapOf("users" to listOf(uid))).await()
+                Log.d("CanvasRepositoryImpl", "Couple document created in Firestore")
                 firestore.collection("users").document(uid).update("coupleId", coupleId).await()
+                Log.d("CanvasRepositoryImpl", "User document updated in Firestore")
+                db.getReference("canvases/$coupleId/users").setValue(mapOf(uid to true)).await()
+                Log.d("CanvasRepositoryImpl", "Users list created in Realtime Database")
             }
             Result.success(coupleId)
         } catch (e: Exception) {
+            Log.e("CanvasRepositoryImpl", "Error creating couple: ${e.message}")
             Result.failure(e)
         }
     }
 
     override suspend fun joinCouple(uid: String, coupleId: String): Result<Unit> {
         return try {
+            Log.d("CanvasRepositoryImpl", "Joining couple for user: $uid, coupleId: $coupleId")
             withContext(Dispatchers.IO) {
                 val coupleRef = firestore.collection("couples").document(coupleId)
+                val coupleDoc = coupleRef.get().await()
+                val users = coupleDoc.get("users") as? List<*>
+                val otherUser = users?.firstOrNull { it != uid } as? String
+
                 coupleRef.update("users", FieldValue.arrayUnion(uid)).await()
+                Log.d("CanvasRepositoryImpl", "Couple document updated in Firestore")
                 firestore.collection("users").document(uid).update("coupleId", coupleId).await()
+                Log.d("CanvasRepositoryImpl", "User document updated in Firestore")
+                if (otherUser != null) {
+                    firestore.collection("users").document(otherUser).update("coupleId", coupleId).await()
+                    Log.d("CanvasRepositoryImpl", "Other user document updated in Firestore")
+                }
+                val usersMap = users?.associate { it as String to true }?.toMutableMap() ?: mutableMapOf()
+                usersMap[uid] = true
+                db.getReference("canvases/$coupleId/users").setValue(usersMap).await()
+                Log.d("CanvasRepositoryImpl", "Users list updated in Realtime Database")
             }
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("CanvasRepositoryImpl", "Error joining couple: ${e.message}")
             Result.failure(e)
         }
     }
