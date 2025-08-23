@@ -1,7 +1,9 @@
-
 package com.ourcanvas.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -23,7 +24,9 @@ fun CoupleScreen(
     val coupleScreenState by viewModel.coupleScreenState.collectAsState()
 
     if (coupleScreenState.isLoading) {
-        CircularProgressIndicator()
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
     }
 
     coupleScreenState.error?.let {
@@ -50,14 +53,7 @@ fun CoupleScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         CoupleScreenContent(
             onCreateCouple = { viewModel.createCouple() },
@@ -77,7 +73,7 @@ fun CoupleScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -92,16 +88,20 @@ fun CoupleScreenContent(
             ) {
                 Button(
                     onClick = onCreateCouple,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Text("Create Couple")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedButton(
                     onClick = { showJoinForm = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                     enabled = !showJoinForm
                 ) {
                     Text("Join Couple")
@@ -122,14 +122,17 @@ fun CoupleScreenContent(
                         value = coupleId,
                         onValueChange = { coupleId = it },
                         label = { Text("Couple ID") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = { onJoinCouple(coupleId) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
                         enabled = coupleId.isNotBlank(),
-                        shape = RoundedCornerShape(50)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Text("Join")
                     }

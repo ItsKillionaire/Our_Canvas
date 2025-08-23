@@ -12,10 +12,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -246,51 +248,59 @@ fun DrawingControls(
     var controlsVisible by remember { mutableStateOf(false) }
     val colors = listOf(0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFFFF00)
 
-    Column {
-        FloatingActionButton(
-            onClick = { controlsVisible = !controlsVisible },
-            modifier = modifier
-        ) {
-            Icon(if (controlsVisible) Icons.Default.Done else Icons.Default.Edit, contentDescription = "Toggle Controls")
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = controlsVisible) {
-            Card(
-                modifier = Modifier.padding(16.dp),
-                shape = RoundedCornerShape(16.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { controlsVisible = false }
+                    .align(Alignment.BottomCenter),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ColorPalette(
-                            colors = colors,
-                            selectedColor = state.selectedColor,
-                            onColorSelected = onColorSelected
-                        )
-                        Row {
-                            IconButton(onClick = onToggleEraser) {
-                                Icon(Icons.Filled.Edit, contentDescription = "Eraser")
-                            }
-                            IconButton(onClick = onUndo) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
-                            }
-                            IconButton(onClick = onRedo) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Redo")
+                Card(
+                    modifier = Modifier.padding(bottom = 80.dp, start = 16.dp, end = 16.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ColorPalette(
+                                colors = colors,
+                                selectedColor = state.selectedColor,
+                                onColorSelected = onColorSelected
+                            )
+                            Row {
+                                IconButton(onClick = onToggleEraser) {
+                                    Icon(Icons.Outlined.Delete, contentDescription = "Eraser")
+                                }
+                                IconButton(onClick = onUndo) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
+                                }
+                                IconButton(onClick = onRedo) {
+                                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = "Redo")
+                                }
                             }
                         }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Text("Stroke Width", style = MaterialTheme.typography.bodyMedium)
+                        Slider(
+                            value = state.selectedStrokeWidth,
+                            onValueChange = { onStrokeWidthChanged(it) },
+                            valueRange = 1f..50f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    Text("Stroke Width", style = MaterialTheme.typography.bodyMedium)
-                    Slider(
-                        value = state.selectedStrokeWidth,
-                        onValueChange = { onStrokeWidthChanged(it) },
-                        valueRange = 1f..50f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
             }
+        }
+        FloatingActionButton(
+            onClick = { controlsVisible = !controlsVisible },
+            modifier = modifier.align(Alignment.BottomEnd)
+        ) {
+            Icon(if (controlsVisible) Icons.Default.Close else Icons.Default.Edit, contentDescription = "Toggle Controls")
         }
     }
 }
