@@ -36,7 +36,7 @@ class SplashViewModel @Inject constructor(
             android.util.Log.d("SplashViewModel", "checkUserState: Sign-in result: $result")
             if (result == null) {
                 android.util.Log.d("SplashViewModel", "checkUserState: Sign-in timed out")
-                _destination.value = "couple"
+                _destination.value = "canvas"
                 return@launch
             }
             result.onSuccess { uid ->
@@ -49,16 +49,16 @@ class SplashViewModel @Inject constructor(
                     val createProfileResult = createUserProfile(uid)
                     android.util.Log.d("SplashViewModel", "checkUserState: Create profile result: $createProfileResult")
                     createProfileResult.onSuccess {
-                        android.util.Log.d("SplashViewModel", "checkUserState: Profile creation successful, navigating to couple screen")
-                        _destination.value = "couple"
+                        android.util.Log.d("SplashViewModel", "checkUserState: Profile creation successful, navigating to canvas screen")
+                        _destination.value = "canvas"
                     }.onFailure { e ->
                         android.util.Log.d("SplashViewModel", "checkUserState: Profile creation failed: ${e.message}")
-                        _destination.value = "couple"
+                        _destination.value = "canvas"
                     }
                 } else {
                     if (userProfile.coupleId != null) {
-                        android.util.Log.d("SplashViewModel", "checkUserState: User has couple ID, navigating to canvas screen")
-                        _destination.value = "canvas"
+                        android.util.Log.d("SplashViewModel", "checkUserState: User has couple ID, navigating to couple screen")
+                        _destination.value = "couple"
                     } else {
                         android.util.Log.d("SplashViewModel", "checkUserState: User has no couple ID, navigating to couple screen")
                         _destination.value = "couple"
@@ -66,7 +66,7 @@ class SplashViewModel @Inject constructor(
                 }
             }.onFailure {
                 android.util.Log.d("SplashViewModel", "checkUserState: Sign-in failed: ${it.message}")
-                _destination.value = "couple"
+                _destination.value = "canvas"
             }
         }
     }

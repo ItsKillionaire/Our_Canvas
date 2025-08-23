@@ -11,17 +11,17 @@ interface CanvasRepository {
     suspend fun signInWithGoogle(idToken: String): Result<String>
 
     // MOOD
-    suspend fun createCouple(uid: String): Result<String>
-    suspend fun joinCouple(uid: String, coupleId: String): Result<Unit>
+    suspend fun createCanvas(uid: String): Result<String>
+    suspend fun joinCanvas(uid: String, canvasId: String): Result<Unit>
     fun getUserProfile(uid: String): Flow<UserProfile?>
     suspend fun updateUserMood(uid: String, mood: String): Result<Unit>
-    fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile>
+    fun getPartnerMood(uid: String, canvasId: String): Flow<UserProfile>
 
-    suspend fun leaveCouple(uid: String): Result<Unit>
+    suspend fun leaveCanvas(uid: String): Result<Unit>
 
     // CANVAS - DRAWING (Realtime Database)
-    fun getDrawingPaths(coupleId: String): Flow<DrawPath>
-    suspend fun sendDrawingPath(coupleId: String, path: DrawPath): Result<Unit>
+    fun getDrawingPaths(canvasId: String): Flow<DrawPath>
+    suspend fun sendDrawingPath(canvasId: String, path: DrawPath): Result<Unit>
 
     
 }

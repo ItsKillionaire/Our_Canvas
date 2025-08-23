@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetPartnerMood @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    operator fun invoke(uid: String, coupleId: String): Flow<UserProfile> {
-        return repository.getPartnerMood(uid, coupleId)
+    operator fun invoke(uid: String, canvasId: String): Flow<UserProfile> {
+        return repository.getPartnerMood(uid, canvasId)
     }
 }

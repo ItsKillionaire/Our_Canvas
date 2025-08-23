@@ -69,52 +69,65 @@ class CanvasRepositoryImpl(
         }
     }
 
-    override suspend fun createCouple(uid: String): Result<String> {
+    override suspend fun createCanvas(uid: String): Result<String> {
         return try {
-            Log.d("CanvasRepositoryImpl", "Creating couple for user: $uid")
-            val coupleRef = firestore.collection("couples").document()
-            val coupleId = coupleRef.id
-            Log.d("CanvasRepositoryImpl", "Couple ID: $coupleId")
+            Log.d("CanvasRepositoryImpl", "[createCanvas] Creating canvas for user: $uid")
+            val canvasRef = firestore.collection("canvases").document()
+            val canvasId = canvasRef.id
+            Log.d("CanvasRepositoryImpl", "[createCanvas] Generated Canvas ID: $canvasId")
             withContext(Dispatchers.IO) {
-                coupleRef.set(mapOf("users" to listOf(uid))).await()
-                Log.d("CanvasRepositoryImpl", "Couple document created in Firestore")
-                firestore.collection("users").document(uid).update("coupleId", coupleId).await()
-                Log.d("CanvasRepositoryImpl", "User document updated in Firestore")
-                db.getReference("canvases/$coupleId/users").setValue(mapOf(uid to true)).await()
-                Log.d("CanvasRepositoryImpl", "Users list created in Realtime Database")
+                canvasRef.set(mapOf("users" to listOf(uid))).await()
+                Log.d("CanvasRepositoryImpl", "[createCanvas] Canvas document created in Firestore")
+                firestore.collection("users").document(uid).update("canvasId", canvasId).await()
+                Log.d("CanvasRepositoryImpl", "[createCanvas] User document updated in Firestore")
+                db.getReference("canvases/$canvasId/users").setValue(mapOf(uid to true)).await()
+                Log.d("CanvasRepositoryImpl", "[createCanvas] Users list created in Realtime Database")
             }
-            Result.success(coupleId)
+            Log.d("CanvasRepositoryImpl", "[createCanvas] Canvas creation successful")
+            Result.success(canvasId)
         } catch (e: Exception) {
-            Log.e("CanvasRepositoryImpl", "Error creating couple: ${e.message}")
+            Log.e("CanvasRepositoryImpl", "[createCanvas] Error creating canvas: ${e.message}", e)
             Result.failure(e)
         }
     }
 
-    override suspend fun joinCouple(uid: String, coupleId: String): Result<Unit> {
+    override suspend fun joinCanvas(uid: String, canvasId: String): Result<Unit> {
         return try {
-            Log.d("CanvasRepositoryImpl", "Joining couple for user: $uid, coupleId: $coupleId")
+            Log.d("CanvasRepositoryImpl", "[joinCanvas] Joining canvas for user: $uid, canvasId: $canvasId")
             withContext(Dispatchers.IO) {
-                val coupleRef = firestore.collection("couples").document(coupleId)
-                val coupleDoc = coupleRef.get().await()
-                val users = coupleDoc.get("users") as? List<*>
+                val canvasRef = firestore.collection("canvases").document(canvasId)
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] Getting canvas document")
+                val canvasDoc = canvasRef.get().await()
+
+                if (!canvasDoc.exists()) {
+                    Log.e("CanvasRepositoryImpl", "[joinCanvas] Canvas with ID $canvasId not found.")
+                    throw Exception("Canvas with ID $canvasId not found.")
+                }
+
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] Canvas document exists")
+                val users = canvasDoc.get("users") as? List<*> 
                 val otherUser = users?.firstOrNull { it != uid } as? String
 
-                coupleRef.update("users", FieldValue.arrayUnion(uid)).await()
-                Log.d("CanvasRepositoryImpl", "Couple document updated in Firestore")
-                firestore.collection("users").document(uid).update("coupleId", coupleId).await()
-                Log.d("CanvasRepositoryImpl", "User document updated in Firestore")
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] Updating canvas document with new user")
+                canvasRef.update("users", FieldValue.arrayUnion(uid)).await()
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] Canvas document updated in Firestore")
+                firestore.collection("users").document(uid).update("canvasId", canvasId).await()
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] User document updated in Firestore")
                 if (otherUser != null) {
-                    firestore.collection("users").document(otherUser).update("coupleId", coupleId).await()
-                    Log.d("CanvasRepositoryImpl", "Other user document updated in Firestore")
+                    Log.d("CanvasRepositoryImpl", "[joinCanvas] Updating other user\'s document")
+                    firestore.collection("users").document(otherUser).update("canvasId", canvasId).await()
+                    Log.d("CanvasRepositoryImpl", "[joinCanvas] Other user document updated in Firestore")
                 }
                 val usersMap = users?.associate { it as String to true }?.toMutableMap() ?: mutableMapOf()
                 usersMap[uid] = true
-                db.getReference("canvases/$coupleId/users").setValue(usersMap).await()
-                Log.d("CanvasRepositoryImpl", "Users list updated in Realtime Database")
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] Updating users list in Realtime Database")
+                db.getReference("canvases/$canvasId/users").setValue(usersMap).await()
+                Log.d("CanvasRepositoryImpl", "[joinCanvas] Users list updated in Realtime Database")
             }
+            Log.d("CanvasRepositoryImpl", "[joinCanvas] Join canvas successful")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("CanvasRepositoryImpl", "Error joining couple: ${e.message}")
+            Log.e("CanvasRepositoryImpl", "[joinCanvas] Error joining canvas: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -147,8 +160,8 @@ class CanvasRepositoryImpl(
 
                 val userProfile = userRef.get().await().toObject(UserProfile::class.java)
                 userProfile?.coupleId?.let {
-                    val coupleRef = firestore.collection("couples").document(it)
-                    coupleRef.update("moods.$uid", mood).await()
+                    val canvasRef = firestore.collection("canvases").document(it)
+                    canvasRef.update("moods.$uid", mood).await()
                 }
             }
             Result.success(Unit)
@@ -157,8 +170,8 @@ class CanvasRepositoryImpl(
         }
     }
 
-    override fun getDrawingPaths(coupleId: String): Flow<DrawPath> = callbackFlow {
-        val pathsRef = db.getReference("canvases/$coupleId/drawing_paths")
+    override fun getDrawingPaths(canvasId: String): Flow<DrawPath> = callbackFlow {
+        val pathsRef = db.getReference("canvases/$canvasId/drawing_paths")
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -180,10 +193,10 @@ class CanvasRepositoryImpl(
         awaitClose { pathsRef.removeEventListener(listener) }
     }
 
-    override suspend fun sendDrawingPath(coupleId: String, path: DrawPath): Result<Unit> {
+    override suspend fun sendDrawingPath(canvasId: String, path: DrawPath): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
-                val pathsRef = db.getReference("canvases/$coupleId/drawing_paths")
+                val pathsRef = db.getReference("canvases/$canvasId/drawing_paths")
                 pathsRef.push().setValue(path.copy(id = "")).await()
             }
             Result.success(Unit)
@@ -193,16 +206,16 @@ class CanvasRepositoryImpl(
     }
 
    override fun getPartnerMood(uid: String, coupleId: String): Flow<UserProfile> = callbackFlow {
-        val coupleRef = firestore.collection("couples").document(coupleId)
+        val canvasRef = firestore.collection("canvases").document(coupleId)
 
-        val listener = coupleRef.addSnapshotListener { snapshot, error ->
+        val listener = canvasRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
                 return@addSnapshotListener
             }
 
             if (snapshot != null && snapshot.exists()) {
-                val moods = snapshot.get("moods") as? Map<*, *>
+                val moods = snapshot.get("moods") as? Map<*, *> 
                 moods?.let { 
                     val partnerId = (snapshot.get("users") as? List<*>)?.mapNotNull { it as? String }?.firstOrNull { it != uid }
                     val partnerMood = it[partnerId] as? String ?: "…"
@@ -219,10 +232,15 @@ class CanvasRepositoryImpl(
 
     
 
-    override suspend fun leaveCouple(uid: String): Result<Unit> {
+    override suspend fun leaveCanvas(uid: String): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
-                firestore.collection("users").document(uid).update("coupleId", null).await()
+                val userProfile = firestore.collection("users").document(uid).get().await().toObject(UserProfile::class.java)
+                userProfile?.coupleId?.let {
+                    val canvasRef = firestore.collection("canvases").document(it)
+                    canvasRef.update("users", FieldValue.arrayRemove(uid)).await()
+                }
+                firestore.collection("users").document(uid).update("canvasId", null).await()
             }
             Result.success(Unit)
         } catch (e: Exception) {

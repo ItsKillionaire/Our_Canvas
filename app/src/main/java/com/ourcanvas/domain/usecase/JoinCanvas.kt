@@ -3,10 +3,10 @@ package com.ourcanvas.domain.usecase
 import com.ourcanvas.data.repository.CanvasRepository
 import javax.inject.Inject
 
-class CreateCouple @Inject constructor(
+class JoinCanvas @Inject constructor(
     private val repository: CanvasRepository
 ) {
-    suspend operator fun invoke(uid: String): Result<String> {
-        return repository.createCouple(uid)
+    suspend operator fun invoke(uid: String, canvasId: String): Result<Unit> {
+        return repository.joinCanvas(uid, canvasId)
     }
 }
