@@ -1,31 +1,20 @@
 package com.ourcanvas.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,14 +28,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ourcanvas.data.model.PointF
 import com.ourcanvas.ui.viewmodels.CanvasViewModel
-import com.ourcanvas.ui.viewmodels.CanvasViewModel.CanvasState
 
 @Composable
 fun CanvasScreen(
@@ -87,7 +73,7 @@ fun CanvasScreen(
                     onUpdateMood = { viewModel.onEvent(CanvasViewModel.CanvasEvent.UpdateMood(it)) }
                 )
             },
-            bottomBar = {
+            floatingActionButton = {
                 DrawingControls(
                     state = state,
                     onColorSelected = { viewModel.onEvent(CanvasViewModel.CanvasEvent.SelectColor(it)) },
@@ -134,7 +120,7 @@ fun LeaveCoupleDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CanvasTopBar(
-    state: CanvasState,
+    state: CanvasViewModel.CanvasState,
     onLeaveCouple: () -> Unit,
     onUpdateMood: (String) -> Unit
 ) {
@@ -143,8 +129,12 @@ fun CanvasTopBar(
     TopAppBar(
         title = {
             state.coupleId?.let {
-                IconButton(onClick = { clipboardManager.setText(AnnotatedString(it)) }) {
-                    Icon(Icons.Filled.Badge, contentDescription = "Copy Couple ID")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "Couple ID:")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(it)) }) {
+                        Text(text = it)
+                    }
                 }
             }
         },
@@ -163,13 +153,13 @@ fun CanvasTopBar(
 @Composable
 fun SharedCanvas(
     modifier: Modifier = Modifier,
-    state: CanvasState,
+    state: CanvasViewModel.CanvasState,
     onDrawPath: (com.ourcanvas.data.model.DrawPath) -> Unit
 ) {
     val currentPath = remember { mutableStateListOf<PointF>() }
 
     Canvas(modifier = modifier
-        .background(Color.LightGray)
+        .background(Color.White)
         .pointerInput(Unit) {
             detectDragGestures(
                 onDragStart = {
@@ -184,7 +174,7 @@ fun SharedCanvas(
                         onDrawPath(
                             com.ourcanvas.data.model.DrawPath(
                                 points = currentPath.toList(),
-                                color = if (state.isEraserSelected) Color.LightGray.value.toLong() else state.selectedColor,
+                                color = if (state.isEraserSelected) Color.White.value.toLong() else state.selectedColor,
                                 strokeWidth = state.selectedStrokeWidth,
                                 userId = userId
                             )
@@ -192,7 +182,7 @@ fun SharedCanvas(
                     }
                 }
             )
-        }) {
+        }) { 
         state.drawingPaths.forEach { path ->
             val composePath = Path()
             path.points.forEachIndexed { i, point ->
@@ -223,7 +213,7 @@ fun SharedCanvas(
         }
         drawPath(
             path = composePath,
-            color = Color(if (state.isEraserSelected) Color.LightGray.value.toLong() else state.selectedColor),
+            color = Color(if (state.isEraserSelected) Color.White.value.toLong() else state.selectedColor),
             style = Stroke(
                 width = state.selectedStrokeWidth,
                 cap = StrokeCap.Round,
@@ -239,47 +229,37 @@ fun MoodIndicator(
     modifier: Modifier = Modifier,
     onMoodSelected: ((String) -> Unit)? = null
 ) {
-    Card(
-        modifier = modifier.clickable {
-            onMoodSelected?.invoke(if (mood == "😊") "😢" else "😊")
-        },
-        shape = CircleShape,
-        border = BorderStroke(2.dp, Color.White)
-    ) {
-        Text(
-            text = mood,
-            fontSize = 48.sp,
-            modifier = Modifier.padding(8.dp)
-        )
+    IconButton(onClick = { onMoodSelected?.invoke(if (mood == "😊") "😢" else "😊") }) {
+        Text(text = mood, style = MaterialTheme.typography.headlineLarge)
     }
 }
 
 @Composable
 fun DrawingControls(
     modifier: Modifier = Modifier,
-    state: CanvasState,
+    state: CanvasViewModel.CanvasState,
     onColorSelected: (Long) -> Unit,
     onStrokeWidthChanged: (Float) -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onToggleEraser: () -> Unit
 ) {
-    var controlsVisible by remember { mutableStateOf(true) }
+    var controlsVisible by remember { mutableStateOf(false) }
     val colors = listOf(0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFFFF00)
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { controlsVisible = !controlsVisible }) {
-                Icon(
-                    if (controlsVisible) Icons.Default.Close else Icons.Default.Edit,
-                    contentDescription = "Toggle Controls"
-                )
-            }
-            AnimatedVisibility(visible = controlsVisible) {
-                Column {
+    Column {
+        FloatingActionButton(
+            onClick = { controlsVisible = !controlsVisible },
+            modifier = modifier
+        ) {
+            Icon(if (controlsVisible) Icons.Default.Done else Icons.Default.Edit, contentDescription = "Toggle Controls")
+        }
+        AnimatedVisibility(visible = controlsVisible) {
+            Card(
+                modifier = Modifier.padding(16.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     ColorPalette(
                         colors = colors,
                         selectedColor = state.selectedColor,
@@ -298,7 +278,7 @@ fun DrawingControls(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo")
                         }
                         IconButton(onClick = onRedo) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Redo")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Redo")
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -324,20 +304,22 @@ fun ColorPalette(
     LazyRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    ) { 
         items(colors) { color ->
-            Surface(
+            Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clickable { onColorSelected(color) },
-                shape = CircleShape,
-                color = Color(color),
-                border = if (selectedColor == color) {
-                    BorderStroke(2.dp, Color.White)
-                } else {
-                    null
+                    .background(Color(color), CircleShape)
+                    .clickable { onColorSelected(color) }
+            ) {
+                if (selectedColor == color) {
+                    Icon(
+                        Icons.Default.Done, contentDescription = "Selected",
+                        tint = Color.White,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
-            ) {}
+            }
         }
     }
 }

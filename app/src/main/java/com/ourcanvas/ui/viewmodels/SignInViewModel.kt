@@ -3,8 +3,9 @@ package com.ourcanvas.ui.viewmodels
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.firebase.ui.auth.AuthUI
-import com.google.firebase.auth.FirebaseAuth
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.common.api.ApiException
 import com.ourcanvas.domain.usecase.SignInAnonymously
 import com.ourcanvas.domain.usecase.SignInWithGoogle
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,17 +15,12 @@ import javax.inject.Inject
 @HiltViewModel
 class SignInViewModel @Inject constructor(
     private val signInAnonymously: SignInAnonymously,
-    private val signInWithGoogle: SignInWithGoogle
+    private val signInWithGoogle: SignInWithGoogle,
+    private val googleSignInClient: GoogleSignInClient
 ) : ViewModel() {
 
     fun getSignInIntent(): Intent {
-        val providers = arrayListOf(
-            AuthUI.IdpConfig.GoogleBuilder().build()
-        )
-        return AuthUI.getInstance()
-            .createSignInIntentBuilder()
-            .setAvailableProviders(providers)
-            .build()
+        return googleSignInClient.signInIntent
     }
 
     fun signInAnonymously(onSuccess: () -> Unit) {
@@ -36,9 +32,21 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    fun handleSignInResult(resultCode: Int, onSuccess: () -> Unit) {
-        if (resultCode == -1) { // RESULT_OK
-            onSuccess()
+    fun handleSignInResult(resultCode: Int, data: Intent?, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                val account = task.getResult(ApiException::class.java)
+                val idToken = account.idToken
+                if (idToken != null) {
+                    val result = signInWithGoogle(idToken)
+                    if (result.isSuccess) {
+                        onSuccess()
+                    }
+                }
+            } catch (e: ApiException) {
+                // Handle error
+            }
         }
     }
 }

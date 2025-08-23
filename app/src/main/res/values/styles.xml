@@ -1,6 +1,4 @@
 <resources>
-    <!-- Base application theme. -->
     <style name="Theme.OurCanvas" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
     </style>
 </resources>

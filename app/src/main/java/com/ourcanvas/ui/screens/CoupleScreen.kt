@@ -1,11 +1,15 @@
+
 package com.ourcanvas.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -43,10 +47,23 @@ fun CoupleScreen(
         }
     }
 
-    CoupleScreenContent(
-        onCreateCouple = { viewModel.createCouple() },
-        onJoinCouple = { viewModel.joinCouple(it) }
-    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary
+                    )
+                )
+            )
+    ) {
+        CoupleScreenContent(
+            onCreateCouple = { viewModel.createCouple() },
+            onJoinCouple = { viewModel.joinCouple(it) }
+        )
+    }
 }
 
 @Composable
@@ -66,22 +83,25 @@ fun CoupleScreenContent(
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Button(
                     onClick = onCreateCouple,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(50)
                 ) {
                     Text("Create Couple")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(
+                OutlinedButton(
                     onClick = { showJoinForm = true },
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(50),
                     enabled = !showJoinForm
                 ) {
                     Text("Join Couple")
@@ -94,9 +114,10 @@ fun CoupleScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp),
+                shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(32.dp)) {
                     OutlinedTextField(
                         value = coupleId,
                         onValueChange = { coupleId = it },
@@ -107,7 +128,8 @@ fun CoupleScreenContent(
                     Button(
                         onClick = { onJoinCouple(coupleId) },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = coupleId.isNotBlank()
+                        enabled = coupleId.isNotBlank(),
+                        shape = RoundedCornerShape(50)
                     ) {
                         Text("Join")
                     }
